@@ -57,6 +57,10 @@ var (
 
 const version = "1.0.2"
 
+// MODIFICADO PARA SUPORTE A CONEXÃO A WEBHOOK SEM PROXY
+var webhookUseProxy bool
+// FIM DO MODIFICADO
+
 func init() {
 	err := godotenv.Load()
 	if err != nil {
@@ -64,6 +68,11 @@ func init() {
 	}
 
 	flag.Parse()
+
+	// MODIFICADO PARA SUPORTE A CONEXÃO A WEBHOOK SEM PROXY
+	val := os.Getenv("WEBHOOK_USE_PROXY")
+    webhookUseProxy = strings.ToLower(val) == "true"
+	// FIM DO MODIFICADO
 
 	// Novo bloco para sobrescrever o osName pelo ENV, se existir
 	if v := os.Getenv("SESSION_DEVICE_NAME"); v != "" {

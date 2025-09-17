@@ -11,6 +11,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
+	"github.com/go-resty/resty/v2"
 )
 
 func Find(slice []string, val string) bool {
@@ -80,7 +81,15 @@ func callHook(myurl string, payload map[string]string, id string) {
 		log.Debug().Str(key, value).Msg("")
 	}
 
-	client := clientManager.GetHTTPClient(id)
+	// MODIFICADO: escolhe qual client usar para webhook com base no env
+	//client := clientManager.GetHTTPClient(id)
+	var client *resty.Client
+	if webhookUseProxy {
+		client = clientManager.GetHTTPClient(id)
+	} else {
+		client = clientManager.GetWebhookHTTPClient(id)
+	}
+	// FIM DO MODIFICADO
 
 	format := os.Getenv("WEBHOOK_FORMAT")
 	if format == "json" {
@@ -116,7 +125,15 @@ func callHook(myurl string, payload map[string]string, id string) {
 func callHookFile(myurl string, payload map[string]string, id string, file string) error {
 	log.Info().Str("file", file).Str("url", myurl).Msg("Sending POST")
 
-	client := clientManager.GetHTTPClient(id)
+	// MODIFICADO: escolhe qual client usar para webhook com base no env
+	//client := clientManager.GetHTTPClient(id)
+	var client *resty.Client
+	if webhookUseProxy {
+		client = clientManager.GetHTTPClient(id)
+	} else {
+		client = clientManager.GetWebhookHTTPClient(id)
+	}
+	// FIM DO MODIFICADO
 
 	// Create final payload map
 	finalPayload := make(map[string]string)
