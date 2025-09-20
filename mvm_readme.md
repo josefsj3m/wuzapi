@@ -17,6 +17,12 @@
 2. docker tag your-user/wuzapi:custom ghcr.io/your-user/wuzapi:custom
 2. docker push ghcr.io/your-user/wuzapi:custom
 
+# Modified files
+1. clients.go
+2. helpers.go
+3. main.go
+4. wmaiu.go
+
 
 
 
