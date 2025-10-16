@@ -11,6 +11,7 @@ type ClientManager struct {
 	sync.RWMutex
 	whatsmeowClients map[string]*whatsmeow.Client
 	httpClients      map[string]*resty.Client
+	webhookHTTPClients map[string]*resty.Client // MODIFICADO: novo client dedicado para webhooks (sem proxy)
 	myClients        map[string]*MyClient
 }
 
@@ -18,9 +19,30 @@ func NewClientManager() *ClientManager {
 	return &ClientManager{
 		whatsmeowClients: make(map[string]*whatsmeow.Client),
 		httpClients:      make(map[string]*resty.Client),
+		webhookHTTPClients: make(map[string]*resty.Client), // MODIFICADO: novo client dedicado para webhooks (sem proxy)
 		myClients:        make(map[string]*MyClient),
 	}
 }
+
+// MODIFICAÇÃO: métodos para clients de webhook (sempre sem proxy)
+func (cm *ClientManager) SetWebhookHTTPClient(userID string, client *resty.Client) {
+	cm.Lock()
+	defer cm.Unlock()
+	cm.webhookHTTPClients[userID] = client
+}
+
+func (cm *ClientManager) GetWebhookHTTPClient(userID string) *resty.Client {
+	cm.RLock()
+	defer cm.RUnlock()
+	return cm.webhookHTTPClients[userID]
+}
+
+func (cm *ClientManager) DeleteWebhookHTTPClient(userID string) {
+	cm.Lock()
+	defer cm.Unlock()
+	delete(cm.webhookHTTPClients, userID)
+}
+// FIM do MODIFICADO
 
 func (cm *ClientManager) SetWhatsmeowClient(userID string, client *whatsmeow.Client) {
 	cm.Lock()

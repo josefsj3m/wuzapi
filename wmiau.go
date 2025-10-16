@@ -416,6 +416,23 @@ func (s *server) startClient(userID string, textjid string, token string, subscr
 	}
 	clientManager.SetHTTPClient(userID, httpClient)
 
+	// MODIFICADO para usar conexão a webhook sem proxy
+	//
+	// Client separado para Webhooks (sem proxy, nunca aplica proxy)
+	httpClientNoProxy := resty.New()
+	httpClientNoProxy.SetRedirectPolicy(resty.FlexibleRedirectPolicy(15))
+	httpClientNoProxy.SetTimeout(30 * time.Second)
+	httpClientNoProxy.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+	if *waDebug == "DEBUG" {
+		httpClientNoProxy.SetDebug(true)
+	}
+	if webhookUseProxy && proxyURL != "" {
+		httpClientNoProxy.SetProxy(proxyURL)
+	}
+	clientManager.SetWebhookHTTPClient(userID, httpClientNoProxy) // NOVO
+	// FIM DO MODIFICADO
+	//
+
 	if client.Store.ID == nil {
 		// No ID stored, new login
 		qrChan, err := client.GetQRChannel(context.Background())
