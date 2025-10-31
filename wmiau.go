@@ -24,6 +24,7 @@ import (
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/appstate"
 	"go.mau.fi/whatsmeow/proto/waCompanionReg"
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -277,8 +278,8 @@ func (s *server) connectOnStartup() {
 				}
 
 				err := s.db.Get(&s3Config, `
-					SELECT s3_enabled, s3_endpoint, s3_region, s3_bucket, 
-						   s3_access_key, s3_secret_key, s3_path_style, 
+					SELECT s3_enabled, s3_endpoint, s3_region, s3_bucket,
+						   s3_access_key, s3_secret_key, s3_path_style,
 						   s3_public_url, s3_retention_days
 					FROM users WHERE id = $1`, userID)
 
@@ -618,6 +619,34 @@ func (mycli *MyClient) myEventHandler(rawEvt interface{}) {
 		log.Info().Msg("Received StreamReplaced event")
 		return
 	case *events.Message:
+
+        // --- [MVMCloud Customization] INÍCIO DO TRATAMENTO DE MENSAGEM REVOGADA ---
+        // A mesnagem é recebida da whatsmeaw e enviada para o webhook configurado
+        if protoMsg := evt.Message.GetProtocolMessage(); protoMsg != nil {
+            if protoMsg.GetType() == waE2E.ProtocolMessage_REVOKE {
+                revokedID := ""
+                if protoMsg.GetKey() != nil {
+                    revokedID = protoMsg.GetKey().GetID()
+                }
+
+                log.Info().
+                    Str("revoked_id", revokedID).
+                    Str("chat", evt.Info.Chat.String()).
+                    Msg("Mensagem revogada recebida (ProtocolMessage_REVOKE)")
+
+                // Monta evento para o webhook
+                postmap["type"] = "MessageRevoke"
+                postmap["revoked_id"] = revokedID
+                postmap["chat"] = evt.Info.Chat.String()
+                postmap["from_me"] = evt.Info.IsFromMe
+                postmap["timestamp"] = evt.Info.Timestamp.Unix()
+
+                dowebhook = 1
+                sendEventWithWebHook(mycli, postmap, "")
+                return // encerra o processamento deste evento
+            }
+        }
+        // --- [FIM DO TRATAMENTO DE MENSAGEM REVOGADA] ---
 
 		var s3Config struct {
 			Enabled       string `db:"s3_enabled"`

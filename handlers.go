@@ -5081,7 +5081,7 @@ func (s *server) ConfigureS3() http.HandlerFunc {
 
 		// Update database
 		_, err = s.db.Exec(`
-			UPDATE users SET 
+			UPDATE users SET
 				s3_enabled = $1,
 				s3_endpoint = $2,
 				s3_region = $3,
@@ -5176,7 +5176,7 @@ func (s *server) GetS3Config() http.HandlerFunc {
 		}
 
 		err := s.db.Get(&config, `
-			SELECT 
+			SELECT
 				s3_enabled as enabled,
 				s3_endpoint as endpoint,
 				s3_region as region,
@@ -5227,7 +5227,7 @@ func (s *server) TestS3Connection() http.HandlerFunc {
 		}
 
 		err := s.db.Get(&config, `
-			SELECT 
+			SELECT
 				s3_enabled as enabled,
 				s3_endpoint as endpoint,
 				s3_region as region,
@@ -5302,7 +5302,7 @@ func (s *server) DeleteS3Config() http.HandlerFunc {
 
 		// Update database to remove S3 configuration
 		_, err := s.db.Exec(`
-			UPDATE users SET 
+			UPDATE users SET
 				s3_enabled = false,
 				s3_endpoint = '',
 				s3_region = '',
@@ -5381,14 +5381,14 @@ func (s *server) GetHistory() http.HandlerFunc {
 			if s.db.DriverName() == "postgres" {
 				query = `
 					SELECT user_id, chat_jid, MAX(timestamp) as last_message_time
-					FROM message_history 
-					GROUP BY user_id, chat_jid 
+					FROM message_history
+					GROUP BY user_id, chat_jid
 					ORDER BY user_id, last_message_time DESC`
 			} else { // sqlite
 				query = `
 					SELECT user_id, chat_jid, MAX(timestamp) as last_message_time
-					FROM message_history 
-					GROUP BY user_id, chat_jid 
+					FROM message_history
+					GROUP BY user_id, chat_jid
 					ORDER BY user_id, last_message_time DESC`
 			}
 
