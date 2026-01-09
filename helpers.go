@@ -243,7 +243,15 @@ func callHook(myurl string, payload map[string]string, userID string) {
 func callHookWithHmac(myurl string, payload map[string]string, userID string, encryptedHmacKey []byte) {
 	log.Info().Str("url", myurl).Str("userID", userID).Msg("Sending POST to client with retry logic")
 
-	client := clientManager.GetHTTPClient(userID)
+	// MODIFICADO: escolhe qual client usar para webhook com base no env
+	//client := clientManager.GetHTTPClient(userID)
+	var client *resty.Client
+	if webhookUseProxy {
+		client = clientManager.GetHTTPClient(userID)
+	} else {
+		client = clientManager.GetWebhookHTTPClient(userID)
+	}
+	// FIM DO MODIFICADO
 
 	// Retry settings
 	maxRetries := 1
@@ -395,7 +403,15 @@ func callHookFile(myurl string, payload map[string]string, userID string, file s
 func callHookFileWithHmac(myurl string, payload map[string]string, userID string, file string, encryptedHmacKey []byte) error {
 	log.Info().Str("file", file).Str("url", myurl).Msg("Sending POST with retry logic")
 
-	client := clientManager.GetHTTPClient(userID)
+	// MODIFICADO: escolhe qual client usar para webhook com base no env
+	//client := clientManager.GetHTTPClient(userID)
+	var client *resty.Client
+	if webhookUseProxy {
+		client = clientManager.GetHTTPClient(userID)
+	} else {
+		client = clientManager.GetWebhookHTTPClient(userID)
+	}
+	// FIM DO MODIFICADO
 
 	maxRetries := 1
 	if *webhookRetryEnabled {

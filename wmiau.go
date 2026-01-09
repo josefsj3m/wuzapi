@@ -308,8 +308,8 @@ func (s *server) connectOnStartup() {
 				}
 
 				err := s.db.Get(&s3Config, `
-					SELECT s3_enabled, s3_endpoint, s3_region, s3_bucket, 
-						   s3_access_key, s3_secret_key, s3_path_style, 
+					SELECT s3_enabled, s3_endpoint, s3_region, s3_bucket,
+						   s3_access_key, s3_secret_key, s3_path_style,
 						   s3_public_url, s3_retention_days
 					FROM users WHERE id = $1`, userID)
 
@@ -460,6 +460,24 @@ func (s *server) startClient(userID string, textjid string, token string, subscr
 		}
 	}
 	clientManager.SetHTTPClient(userID, httpClient)
+
+	// MODIFICADO para usar conexão a webhook sem proxy
+	//
+	// Client separado para Webhooks (sem proxy, nunca aplica proxy)
+	httpClientNoProxy := resty.New()
+	httpClientNoProxy.SetRedirectPolicy(resty.FlexibleRedirectPolicy(15))
+	httpClientNoProxy.SetTimeout(30 * time.Second)
+	httpClientNoProxy.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+	if *waDebug == "DEBUG" {
+		httpClientNoProxy.SetDebug(true)
+	}
+	if webhookUseProxy && proxyURL != "" {
+		httpClientNoProxy.SetProxy(proxyURL)
+	}
+	clientManager.SetWebhookHTTPClient(userID, httpClientNoProxy) // NOVO
+	// FIM DO MODIFICADO
+	//
+
 
 	if client.Store.ID == nil {
 		// No ID stored, new login

@@ -81,6 +81,10 @@ var privateIPBlocks []*net.IPNet
 
 const version = "1.0.5"
 
+// MODIFICADO PARA SUPORTE A CONEXÃO A WEBHOOK SEM PROXY
+var webhookUseProxy bool
+// FIM DO MODIFICADO
+
 func newSafeHTTPClient() *http.Client {
 	return &http.Client{
 		Timeout: 60 * time.Second,
@@ -179,6 +183,42 @@ func main() {
 	}
 
 	flag.Parse()
+
+	// MODIFICADO PARA SUPORTE A CONEXÃO A WEBHOOK SEM PROXY
+	val := os.Getenv("WEBHOOK_USE_PROXY")
+    webhookUseProxy = strings.ToLower(val) == "true"
+
+	// Configura o nível de log pela variável de ambiente, não existe na
+	// wuzapi original
+
+    // 1. Tenta pegar o nível de log da variável de ambiente
+    envLogLevel := strings.ToUpper(os.Getenv("LOG_LEVEL"))
+
+    // 2. Se a flag wadebug estiver vazia, usamos o LOG_LEVEL para o Whatsmeow também
+    if *waDebug == "" && envLogLevel != "" {
+        *waDebug = envLogLevel
+    }
+
+    // 3. Configura o nível global do Zerolog (afeta as mensagens da Wuzapi)
+	// Isso garante que -wadebug DEBUG via terminal também ative o Zerolog
+    finalLevel := strings.ToUpper(*waDebug)
+
+    switch finalLevel {
+    case "DEBUG":
+        zerolog.SetGlobalLevel(zerolog.DebugLevel)
+    case "INFO":
+        zerolog.SetGlobalLevel(zerolog.InfoLevel)
+    case "WARN":
+        zerolog.SetGlobalLevel(zerolog.WarnLevel)
+    case "ERROR":
+        zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+    default:
+        // Se não houver LOG_LEVEL, a Wuzapi por padrão mostra tudo de INFO para cima
+        zerolog.SetGlobalLevel(zerolog.InfoLevel)
+    }
+
+    log.Info().Str("level", zerolog.GlobalLevel().String()).Msg("Global Log Level configured")
+	// FIM DO MODIFICADO
 
 	// Check for address in environment variable if flag is default or empty
 	if *address == "0.0.0.0" || *address == "" {
